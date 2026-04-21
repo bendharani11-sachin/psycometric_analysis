@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MindPulse — Stress Assessment</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#07080d;--bg2:#0f1118;--bg3:#161a24;--bg4:#1c2030;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
+  --text:#eeeae0;--text2:#8a8680;--text3:#4a4845;
+  --gold:#d4a843;--gold2:#f0c75a;--gold-dim:rgba(212,168,67,0.1);
+  --blue:#4a8fe8;--purple:#9b6de8;
+  --r:12px;--r2:20px;--r3:28px;
+}
+html{scroll-behavior:smooth}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+.screen{display:none;min-height:100vh;flex-direction:column}
+.screen.active{display:flex}
+#screen-quiz.active{display:flex}
+.amb{position:fixed;border-radius:50%;pointer-events:none;z-index:0;filter:blur(100px);opacity:0.13}
+.a1{width:600px;height:600px;background:var(--gold);top:-200px;right:-200px}
+.a2{width:500px;height:500px;background:var(--blue);bottom:-150px;left:-150px}
+.a3{width:350px;height:350px;background:var(--purple);top:45%;left:25%}
+@keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+@keyframes ripple{0%{transform:scale(0);opacity:1}100%{transform:scale(4);opacity:0}}
+.au1{animation:fadeUp .5s ease both}
+.au2{animation:fadeUp .5s .08s ease both}
+.au3{animation:fadeUp .5s .16s ease both}
+.au4{animation:fadeUp .5s .24s ease both}
+.au5{animation:fadeUp .5s .32s ease both}
+.container{max-width:700px;margin:0 auto;padding:0 1.5rem;width:100%}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:13px 28px;border-radius:var(--r);border:none;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;font-weight:600;transition:all .2s;text-decoration:none;overflow:hidden}
+.btn-gold{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#07080d}
+.btn-gold:hover{transform:translateY(-2px);box-shadow:0 10px 30px rgba(212,168,67,.35)}
+.btn-ghost{background:var(--bg3);color:var(--text2);border:1px solid var(--border2)}
+.btn-ghost:hover{background:var(--bg4);color:var(--text)}
+.form-group{margin-bottom:1.1rem}
+.form-group label{display:block;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:7px}
+.form-group input{width:100%;padding:11px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);color:var(--text);font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;transition:border-color .2s,box-shadow .2s;appearance:none}
+.form-group input:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px rgba(212,168,67,.12)}
+.form-group input::placeholder{color:var(--text3)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
+@media(max-width:520px){.form-row{grid-template-columns:1fr}}
+.gender-group{display:flex;gap:6px;flex-wrap:wrap}
+.gender-btn{flex:1;min-width:68px;padding:9px 8px;border-radius:var(--r);border:1px solid var(--border);background:var(--bg3);color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;text-align:center}
+.gender-btn:hover{border-color:var(--border2);color:var(--text)}
+.gender-btn.sel{border-color:var(--gold);background:var(--gold-dim);color:var(--gold2)}
+.err{color:#e87a6a;font-size:11px;margin-top:4px;display:none}
+.form-divider{height:1px;background:var(--border);margin:1.2rem 0}
+.form-sec-lbl{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);margin-bottom:.85rem}
+
+/* ══ SCREEN 0: AUTH LOGIN ══ */
+#screen-auth{background:var(--bg);align-items:center;justify-content:center;position:relative;overflow:hidden}
+.auth-card{width:100%;max-width:420px;position:relative;z-index:2;padding:2rem}
+.auth-banner{width:100%;height:auto;display:block;border-radius:10px;margin-bottom:1rem;border:1px solid var(--border2);background:#fff}
+.auth-logo{font-family:'Syne',sans-serif;font-size:36px;font-weight:800;text-align:center;margin-bottom:.3rem}
+.auth-logo span{color:var(--gold)}
+.auth-tagline{text-align:center;font-size:12px;color:var(--text2);letter-spacing:.1em;text-transform:uppercase;margin-bottom:2.5rem}
+.auth-box{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r3);padding:2rem}
+.auth-title{font-family:'Syne',sans-serif;font-size:20px;font-weight:700;margin-bottom:.3rem}
+.auth-sub{font-size:12.5px;color:var(--text2);margin-bottom:1.5rem;line-height:1.6}
+.auth-err{background:rgba(232,98,74,.12);border:1px solid rgba(232,98,74,.3);border-radius:var(--r);padding:10px 14px;font-size:12.5px;color:#e87a6a;margin-bottom:1rem;display:none}
+.pass-wrap{position:relative}
+.pass-wrap input{padding-right:44px}
+.pass-toggle{position:absolute;right:13px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text3);font-size:14px;padding:2px}
+.pass-toggle:hover{color:var(--text2)}
+.auth-hint{text-align:center;font-size:11px;color:var(--text3);margin-top:1rem}
+.auth-hint span{color:var(--text2)}
+
+/* ══ SCREEN 1: USER DETAILS ══ */
+#screen-login{background:var(--bg);position:relative;overflow:hidden}
+.login-layout{display:grid;grid-template-columns:1fr 1fr;min-height:100vh;position:relative;z-index:2}
+@media(max-width:760px){.login-layout{grid-template-columns:1fr}.login-art{display:none}}
+.login-art{background:linear-gradient(160deg,#0f1118 0%,#0d1020 100%);display:flex;align-items:center;justify-content:center;padding:3rem;position:relative;overflow:hidden;border-right:1px solid var(--border)}
+.art-inner{text-align:center;position:relative;z-index:2}
+.art-logo{font-family:'Syne',sans-serif;font-size:34px;font-weight:800;margin-bottom:.4rem}
+.art-logo span{color:var(--gold)}
+.art-tagline{font-size:12px;color:var(--text2);margin-bottom:2.5rem;letter-spacing:.08em;text-transform:uppercase}
+.art-secs{display:flex;flex-direction:column;gap:10px;max-width:270px;margin:0 auto}
+.art-sec-card{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:14px;padding:11px 15px;display:flex;align-items:center;gap:12px;text-align:left;transition:transform .3s,border-color .3s;animation:float 4s ease-in-out infinite}
+.art-sec-card:hover{transform:translateX(6px);border-color:var(--border2)}
+.art-sec-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+.art-sec-name{font-size:12px;font-weight:600;color:var(--text)}
+.art-sec-sub{font-size:10.5px;color:var(--text2);margin-top:1px}
+.art-orb{position:absolute;border-radius:50%;filter:blur(60px);opacity:.12}
+.art-orb1{width:300px;height:300px;background:var(--gold);top:-100px;right:-80px}
+.art-orb2{width:250px;height:250px;background:var(--blue);bottom:-80px;left:-60px}
+.login-form-wrap{display:flex;align-items:center;justify-content:center;padding:3rem 2rem;overflow-y:auto}
+.login-form-inner{width:100%;max-width:400px}
+.login-welcome{font-family:'Syne',sans-serif;font-size:27px;font-weight:700;margin-bottom:.4rem}
+.login-welcome em{color:var(--gold);font-style:italic}
+.login-sub{font-size:13px;color:var(--text2);margin-bottom:1.75rem;line-height:1.6}
+
+/* ══ SCREEN 2: QUIZ ══ */
+#screen-quiz{background:var(--bg);height:100vh;overflow:hidden}
+.quiz-topbar{flex-shrink:0;padding:.85rem 1.5rem;border-bottom:1px solid var(--border);background:rgba(7,8,13,.95);backdrop-filter:blur(16px);z-index:10}
+.quiz-topbar-inner{max-width:700px;margin:0 auto;display:flex;align-items:center;gap:1rem}
+.quiz-logo{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;flex-shrink:0}
+.quiz-logo span{color:var(--gold)}
+.prog-bar-bg{flex:1;height:6px;background:var(--bg3);border-radius:3px;overflow:hidden}
+.prog-bar-fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--gold2));border-radius:3px;transition:width .6s cubic-bezier(.4,0,.2,1)}
+.prog-pct{font-size:12px;font-weight:700;color:var(--gold);min-width:32px;text-align:right;flex-shrink:0}
+.slide-viewport{flex:1;overflow:hidden;position:relative}
+.slide{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:1.5rem 1rem;opacity:0;pointer-events:none;transform:translateX(50px);transition:opacity .38s ease,transform .38s ease}
+.slide.active{opacity:1;pointer-events:all;transform:translateX(0)}
+.slide.exit-left{opacity:0;transform:translateX(-50px);pointer-events:none}
+.slide-card{width:100%;max-width:640px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r3);padding:2.25rem 2.25rem 1.75rem;position:relative;overflow:hidden}
+.slide-illus{font-size:58px;text-align:center;margin-bottom:1rem;line-height:1;animation:float 3s ease-in-out infinite}
+.q-text{font-family:'Syne',sans-serif;font-size:18px;font-weight:600;line-height:1.55;color:var(--text);margin-bottom:1.6rem}
+.opts{display:flex;flex-direction:column;gap:9px}
+.opt-btn{width:100%;text-align:left;padding:13px 18px;border:1px solid var(--border);border-radius:14px;background:var(--bg3);color:var(--text2);font-family:'Plus Jakarta Sans',sans-serif;font-size:13.5px;font-weight:500;cursor:pointer;transition:all .18s;line-height:1.5;display:flex;align-items:center;gap:12px;position:relative;overflow:hidden}
+.opt-btn .mk{width:24px;height:24px;border-radius:50%;border:1.5px solid var(--border2);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--text3);transition:all .18s}
+.opt-btn:hover{border-color:var(--border2);background:var(--bg4);color:var(--text)}
+.opt-btn:hover .mk{border-color:var(--gold);color:var(--gold)}
+.opt-btn.sel{border-color:var(--gold);background:var(--gold-dim);color:var(--text)}
+.opt-btn.sel .mk{background:var(--gold);border-color:var(--gold);color:#07080d}
+.opt-ripple{position:absolute;width:20px;height:20px;border-radius:50%;background:rgba(212,168,67,.4);pointer-events:none;animation:ripple .5s ease-out forwards;transform-origin:center}
+
+/* ══ SCREEN 3: REPORT ══ */
+#screen-report{background:var(--bg)}
+.report-header{position:sticky;top:0;z-index:10;padding:1rem 1.5rem;border-bottom:1px solid var(--border);background:rgba(7,8,13,.92);backdrop-filter:blur(16px);display:flex;align-items:center;justify-content:space-between}
+.report-logo{font-family:'Syne',sans-serif;font-size:17px;font-weight:800}
+.report-logo span{color:var(--gold)}
+.hdr-user{display:flex;align-items:center;gap:9px;font-size:13px;color:var(--text2)}
+.hdr-av{width:32px;height:32px;border-radius:50%;background:var(--gold-dim);border:1.5px solid var(--gold);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--gold2)}
+.report-body{padding:2rem 1.5rem;position:relative;z-index:2}
+.report-page{display:none}.report-page.active{display:block}
+.rpt-tabs{display:flex;gap:5px;margin-bottom:1.75rem;background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:5px}
+.rpt-tab{flex:1;padding:9px 10px;border-radius:10px;border:none;background:transparent;color:var(--text2);font-family:'Plus Jakarta Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;text-align:center}
+.rpt-tab.active{background:var(--bg4);color:var(--text);border:1px solid var(--border2)}
+.rpt-tab:hover:not(.active){color:var(--text)}
+.score-hero{display:flex;align-items:center;gap:2rem;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r3);padding:2rem;margin-bottom:1.5rem;flex-wrap:wrap}
+@media(max-width:560px){.score-hero{flex-direction:column;text-align:center}}
+.ring-box{flex-shrink:0}
+.score-details{flex:1;min-width:180px}
+.score-level{font-family:'Syne',sans-serif;font-size:22px;font-weight:700;margin-bottom:.2rem}
+.score-profile{font-size:13px;font-weight:600;margin-bottom:.4rem}
+.score-sub{font-size:12.5px;color:var(--text2);line-height:1.6;margin-bottom:.75rem}
+.user-pill{display:flex;flex-wrap:wrap;gap:.75rem;padding:1rem 1.25rem;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);margin-bottom:1.5rem}
+.up-item{display:flex;flex-direction:column;gap:2px}
+.up-lbl{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text3)}
+.up-val{font-size:13px;font-weight:600;color:var(--text)}
+.sec-title{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;margin-bottom:.85rem;color:var(--text);display:flex;align-items:center;gap:10px}
+.sec-title::after{content:'';flex:1;height:1px;background:var(--border)}
+.suggestions-card{background:var(--bg2);border:1px solid var(--border);border-left:3px solid var(--gold);border-radius:var(--r2);padding:1.25rem 1.5rem;margin-bottom:1.5rem}
+.suggestions-card p{font-size:13px;color:var(--text2);line-height:1.8}
+.suggestions-card .sug-item{display:flex;align-items:flex-start;gap:8px;font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:.4rem}
+.sug-dot{width:6px;height:6px;border-radius:50%;background:var(--gold);flex-shrink:0;margin-top:6px}
+.chart-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:1.5rem;margin-bottom:1.5rem}
+.sec-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);margin-bottom:1rem;overflow:hidden}
+.sec-card-header{padding:.85rem 1.2rem;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border)}
+.sec-card-name{font-size:13px;font-weight:700;display:flex;align-items:center;gap:8px}
+.sec-card-badge{font-size:9.5px;font-weight:700;padding:3px 9px;border-radius:20px;letter-spacing:.06em;text-transform:uppercase}
+.sec-card-body{padding:.85rem 1.2rem}
+.sec-card-layout{display:flex;gap:1rem;align-items:stretch}
+.sec-card-media{flex:0 0 30%;max-width:30%}
+.sec-card-media img{width:100%;height:100%;min-height:170px;object-fit:cover;border-radius:10px;border:1px solid var(--border)}
+.sec-card-content{flex:1;max-width:70%}
+.sec-bar-row{display:flex;align-items:center;gap:8px;margin-bottom:.6rem}
+.sec-bar-bg{flex:1;height:6px;background:var(--bg3);border-radius:4px;overflow:hidden}
+.sec-bar-fill{height:100%;border-radius:4px;transition:width .9s cubic-bezier(.4,0,.2,1)}
+.sec-bar-pct{font-size:12px;font-weight:700;min-width:32px;text-align:right}
+.sec-reco{font-size:12px;color:var(--text2);line-height:1.7}
+.sec-reco .reco-band{font-size:11px;font-weight:700;color:var(--gold2);margin:.4rem 0 .2rem}
+.sec-reco li{margin-left:1.2rem;margin-bottom:.2rem}
+.cmp-hero{display:grid;grid-template-columns:1fr auto 1fr;gap:1rem;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:1.5rem;margin-bottom:1.5rem;align-items:center}
+@media(max-width:500px){.cmp-hero{grid-template-columns:1fr;text-align:center}}
+.cmp-lbl{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:4px}
+.cmp-pct{font-family:'Syne',sans-serif;font-size:34px;font-weight:800}
+.cmp-score{font-size:12px;color:var(--text2);margin-top:2px}
+.cmp-date{font-size:10px;color:var(--text3);margin-top:3px}
+.cmp-mid{display:flex;flex-direction:column;align-items:center;gap:4px}
+.cmp-arrow{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700}
+.cmp-arrow.up{background:rgba(62,201,167,.15);color:#3ec9a7}
+.cmp-arrow.down{background:rgba(232,98,74,.15);color:#e8624a}
+.cmp-arrow.same{background:rgba(138,134,128,.1);color:#8a8680}
+.cmp-delta{font-size:13px;font-weight:700}
+.cmp-delta.up{color:#3ec9a7}.cmp-delta.down{color:#e8624a}.cmp-delta.same{color:#8a8680}
+.cmp-sec-row{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:1rem 1.2rem;margin-bottom:9px}
+.cmp-sec-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem;flex-wrap:wrap;gap:.4rem}
+.cmp-sec-name{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600}
+.cmp-bar-row{display:flex;align-items:center;gap:10px}
+.cmp-bar-lbl{font-size:10px;color:var(--text3);font-weight:700;width:36px;flex-shrink:0}
+.cmp-bar-bg{flex:1;height:8px;background:var(--bg3);border-radius:4px;overflow:hidden}
+.cmp-bar-fill{height:100%;border-radius:4px;transition:width .8s ease}
+.cmp-bar-pct{font-size:12px;font-weight:700;min-width:36px;text-align:right}
+.no-prev{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:3rem 2rem;text-align:center;color:var(--text2);font-size:14px;line-height:1.7}
+.no-prev strong{display:block;font-size:16px;color:var(--text);margin-bottom:.5rem}
+.rpt-nav{display:flex;gap:10px;flex-wrap:wrap;margin-top:2rem;padding-top:1.5rem;border-top:1px solid var(--border)}
+@media(max-width:760px){
+  .sec-card-layout{flex-direction:column}
+  .sec-card-media,.sec-card-content{max-width:100%;flex-basis:auto}
+  .sec-card-media img{min-height:150px}
+}
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+</style>
+</head>
+<body>
+
+<div class="amb a1"></div>
+<div class="amb a2"></div>
+<div class="amb a3"></div>
+
+<!-- ════════════ SCREEN 0: AUTH LOGIN ════════════ -->
+<div id="screen-auth" class="screen active">
+  <div class="auth-card au1">
+    <img class="auth-banner" src="Precedency.jpeg" alt="Presidency University">
+    <div class="auth-logo">Mind<span>Pulse</span></div>
+    <div class="auth-tagline">Faculty Stress Assessment Portal</div>
+    <div class="auth-box">
+      <div class="auth-title au2">Welcome back 👋</div>
+      <div class="auth-sub au3">Sign in to access your assessment dashboard.</div>
+      <div class="auth-err" id="auth-err">Incorrect username or password. Please try again.</div>
+      <div class="form-group au3">
+        <label>Username</label>
+        <input type="text" id="auth-user" placeholder="Enter username" autocomplete="off">
+      </div>
+      <div class="form-group au4">
+        <label>Password</label>
+        <div class="pass-wrap">
+          <input type="password" id="auth-pass" placeholder="Enter password" onkeydown="if(event.key==='Enter')doAuth()">
+          <button class="pass-toggle" onclick="togglePass()" title="Show/hide password">👁</button>
+        </div>
+      </div>
+      <button class="btn btn-gold au5" style="width:100%;font-size:15px;padding:14px;margin-top:.5rem" onclick="doAuth()">
+        Sign In
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="auth-hint">Default credentials — Username: <span>user123</span> · Password: <span>12345678</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════ SCREEN 1: USER DETAILS ════════════ -->
+<div id="screen-login" class="screen">
+  <div class="login-layout">
+    <div class="login-art">
+      <div class="art-orb art-orb1"></div>
+      <div class="art-orb art-orb2"></div>
+      <div class="art-inner">
+        <div class="art-logo">Mind<span>Pulse</span></div>
+        <div class="art-tagline">Stress Assessment for Faculty</div>
+        <div class="art-secs">
+          <div class="art-sec-card" style="animation-delay:0s"><div class="art-sec-icon" style="background:rgba(74,143,232,.15)">🔍</div><div><div class="art-sec-name">Section A: Stress Awareness</div><div class="art-sec-sub">Identifying your stress sources</div></div></div>
+          <div class="art-sec-card" style="animation-delay:.3s"><div class="art-sec-icon" style="background:rgba(62,201,167,.15)">💚</div><div><div class="art-sec-name">Section B: Emotional Management</div><div class="art-sec-sub">Staying calm and balanced</div></div></div>
+          <div class="art-sec-card" style="animation-delay:.6s"><div class="art-sec-icon" style="background:rgba(212,168,67,.15)">⚖️</div><div><div class="art-sec-name">Section C: Work-Life Balance</div><div class="art-sec-sub">Balancing work and personal life</div></div></div>
+          <div class="art-sec-card" style="animation-delay:.9s"><div class="art-sec-icon" style="background:rgba(155,109,232,.15)">🛡️</div><div><div class="art-sec-name">Section D: Coping Strategies</div><div class="art-sec-sub">Tools and techniques you use</div></div></div>
+          <div class="art-sec-card" style="animation-delay:1.2s"><div class="art-sec-icon" style="background:rgba(232,98,74,.15)">⚠️</div><div><div class="art-sec-name">Section E: Burnout Indicators</div><div class="art-sec-sub">Signs of emotional exhaustion</div></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="login-form-wrap">
+      <div class="login-form-inner">
+        <div class="login-welcome au1">Your <em>details</em> please</div>
+        <div class="login-sub au2">25 questions · ~10 mins · fully private. Answers personalise your report.</div>
+        <div class="form-sec-lbl au3">Personal info</div>
+        <div class="form-row au3">
+          <div class="form-group">
+            <label>Full Name *</label>
+            <input type="text" id="inp-name" placeholder="Your name" autocomplete="off">
+            <div class="err" id="err-name">Please enter your name.</div>
+          </div>
+          <div class="form-group">
+            <label>Age *</label>
+            <input type="number" id="inp-age" placeholder="e.g. 32" min="18" max="80">
+            <div class="err" id="err-age">Valid age (18–80).</div>
+          </div>
+        </div>
+        <div class="form-row au3">
+          <div class="form-group">
+            <label>Date of Birth *</label>
+            <input type="date" id="inp-dob">
+            <div class="err" id="err-dob">Please enter your DOB.</div>
+          </div>
+          <div class="form-group">
+            <label>Gender *</label>
+            <div class="gender-group">
+              <button class="gender-btn" onclick="pickGender(this,'Male')">Male</button>
+              <button class="gender-btn" onclick="pickGender(this,'Female')">Female</button>
+              <button class="gender-btn" onclick="pickGender(this,'Other')">Other</button>
+            </div>
+            <div class="err" id="err-gender">Please select gender.</div>
+          </div>
+        </div>
+        <div class="form-divider au4"></div>
+        <div class="form-sec-lbl au4">Academic info</div>
+        <div class="form-group au4">
+          <label>College / Institution *</label>
+          <input type="text" id="inp-college" placeholder="e.g. Anna University, Chennai" autocomplete="off">
+          <div class="err" id="err-college">Please enter your institution.</div>
+        </div>
+        <div class="form-group au4">
+          <label>Department / Subject *</label>
+          <input type="text" id="inp-dept" placeholder="e.g. Computer Science" autocomplete="off">
+          <div class="err" id="err-dept">Please enter your department.</div>
+        </div>
+        <button class="btn btn-gold au5" style="width:100%;font-size:15px;padding:14px" onclick="submitLogin()">
+          Start Assessment
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════ SCREEN 2: QUIZ ════════════ -->
+<div id="screen-quiz" class="screen">
+  <div class="quiz-topbar">
+    <div class="quiz-topbar-inner">
+      <div class="quiz-logo">Mind<span>Pulse</span></div>
+      <div class="prog-bar-bg"><div class="prog-bar-fill" id="prog-fill" style="width:0%"></div></div>
+      <div class="prog-pct" id="prog-pct">0%</div>
+    </div>
+  </div>
+  <div class="slide-viewport" id="slide-viewport"></div>
+</div>
+
+<!-- ════════════ SCREEN 3: REPORT ════════════ -->
+<div id="screen-report" class="screen">
+  <div class="report-header">
+    <div class="report-logo">Mind<span>Pulse</span></div>
+    <div class="hdr-user">
+      <div class="hdr-av" id="rpt-av"></div>
+      <span id="rpt-name-hdr"></span>
+    </div>
+  </div>
+  <div class="report-body">
+    <div class="container">
+      <div class="rpt-tabs">
+        <button class="rpt-tab active" onclick="switchTab(1,this)">Overall</button>
+        <button class="rpt-tab" onclick="switchTab(2,this)">Section Breakdown</button>
+      </div>
+
+      <!-- PAGE 1: OVERALL -->
+      <div id="rpt-p1" class="report-page active">
+        <div id="user-pill" class="user-pill"></div>
+        <div class="score-hero">
+          <div class="ring-box">
+            <svg width="150" height="150" viewBox="0 0 150 150">
+              <circle cx="75" cy="75" r="60" fill="none" stroke-width="10" stroke="#1c2030"/>
+              <circle cx="75" cy="75" r="60" fill="none" stroke-width="10" stroke-linecap="round"
+                id="ring-arc" stroke="var(--gold)" stroke-dasharray="376.99" stroke-dashoffset="376.99"
+                transform="rotate(-90 75 75)"
+                style="transition:stroke-dashoffset 1.4s cubic-bezier(.4,0,.2,1),stroke .5s ease"/>
+              <text x="75" y="68" text-anchor="middle" dominant-baseline="middle" font-size="26" font-weight="700" fill="#eeeae0" font-family="Syne,sans-serif" id="ring-pct-text">0%</text>
+              <text x="75" y="88" text-anchor="middle" dominant-baseline="middle" font-size="11" fill="#8a8680" font-family="Plus Jakarta Sans,sans-serif" id="ring-score-text">Overall</text>
+            </svg>
+          </div>
+          <div class="score-details">
+            <div class="score-level" id="score-level-text">—</div>
+            <div class="score-profile" id="score-profile-text" style="color:var(--text2)"></div>
+            <div class="score-sub" id="score-interp-text"></div>
+          </div>
+        </div>
+
+        <div class="sec-title">Section overview</div>
+        <div class="chart-card">
+          <div style="position:relative;height:240px">
+            <canvas id="chart-radar" role="img" aria-label="Radar chart of section scores"></canvas>
+          </div>
+        </div>
+
+        <div class="sec-title">Suggestions</div>
+        <div class="suggestions-card" id="suggestions-card"></div>
+
+        <div class="rpt-nav">
+          <button class="btn btn-gold" onclick="switchTab(2,document.querySelectorAll('.rpt-tab')[1])">Section breakdown →</button>
+          <button class="btn btn-ghost" onclick="downloadReport()">⬇ Download PDF</button>
+        </div>
+      </div>
+
+      <!-- PAGE 2: SECTION BREAKDOWN -->
+      <div id="rpt-p2" class="report-page">
+        <div class="sec-title">Section scores</div>
+        <div class="chart-card" style="margin-bottom:1.5rem">
+          <div style="position:relative;height:240px">
+            <canvas id="chart-bar" role="img" aria-label="Bar chart of section scores"></canvas>
+          </div>
+        </div>
+        <div id="section-cards"></div>
+        <div class="rpt-nav">
+          <button class="btn btn-ghost" onclick="switchTab(1,document.querySelectorAll('.rpt-tab')[0])">← Overall</button>
+          <button class="btn btn-ghost" onclick="downloadReport()">⬇ Download PDF</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ══ SECTIONS DATA ══ */
+const SECS=[
+  {id:'A',name:'Stress Awareness',    color:'#4a8fe8',bg:'rgba(74,143,232,.12)', icon:'🔍', img:'assets/section-1-stress-management.png', qs:[1,2,3,4,5],   reverse:false},
+  {id:'B',name:'Emotional Management',color:'#3ec9a7',bg:'rgba(62,201,167,.12)', icon:'💚', img:'assets/section-2-emotional-management.png', qs:[6,7,8,9,10],  reverse:false},
+  {id:'C',name:'Work-Life Balance',   color:'#d4a843',bg:'rgba(212,168,67,.12)', icon:'⚖️', img:'assets/section-3-work-life-balance.png', qs:[11,12,13,14,15],reverse:false},
+  {id:'D',name:'Coping Strategies',   color:'#9b6de8',bg:'rgba(155,109,232,.12)',icon:'🛡️', img:'assets/section-4-coping-strategies.png', qs:[16,17,18,19,20],reverse:false},
+  {id:'E',name:'Burnout Indicators',  color:'#e8624a',bg:'rgba(232,98,74,.12)',  icon:'⚠️', img:'assets/section-5-burnout-indicators.png', qs:[21,22,23,24,25],reverse:true},
+];
+
+const OPTIONS=[
+  {t:'Strongly Disagree',s:1},
+  {t:'Disagree',s:2},
+  {t:'Neutral',s:3},
+  {t:'Agree',s:4},
+  {t:'Strongly Agree',s:5},
+];
+
+const QUESTIONS=[
+  // Section A
+  {id:1, sec:'A', text:'I am aware of the major sources of stress in my work.'},
+  {id:2, sec:'A', text:'I can identify when I start feeling stressed.'},
+  {id:3, sec:'A', text:'I understand how stress affects my performance.'},
+  {id:4, sec:'A', text:'I recognize early signs of burnout.'},
+  {id:5, sec:'A', text:'I regularly reflect on my stress levels.'},
+  // Section B
+  {id:6, sec:'B', text:'I remain calm under pressure.'},
+  {id:7, sec:'B', text:'I handle difficult situations without losing control.'},
+  {id:8, sec:'B', text:'I feel emotionally balanced during work.'},
+  {id:9, sec:'B', text:'I recover quickly after stressful situations.'},
+  {id:10,sec:'B', text:'I express my emotions in a healthy way.'},
+  // Section C
+  {id:11,sec:'C', text:'I maintain a healthy balance between work and personal life.'},
+  {id:12,sec:'C', text:'I take time to relax regularly.'},
+  {id:13,sec:'C', text:'I can disconnect from work after working hours.'},
+  {id:14,sec:'C', text:'I prioritize my well-being.'},
+  {id:15,sec:'C', text:'I manage my time effectively.'},
+  // Section D
+  {id:16,sec:'D', text:'I use techniques like exercise, meditation, or hobbies to manage stress.'},
+  {id:17,sec:'D', text:'I seek support when I feel stressed.'},
+  {id:18,sec:'D', text:'I approach problems with a positive mindset.'},
+  {id:19,sec:'D', text:'I use relaxation techniques when needed.'},
+  {id:20,sec:'D', text:'I adapt well to changes in my work environment.'},
+  // Section E (reverse scored)
+  {id:21,sec:'E', text:'I feel emotionally exhausted due to my work.'},
+  {id:22,sec:'E', text:'I feel less interested in my teaching responsibilities.'},
+  {id:23,sec:'E', text:'I find it difficult to stay motivated at work.'},
+  {id:24,sec:'E', text:'I feel overwhelmed by my workload.'},
+  {id:25,sec:'E', text:'I feel mentally drained at the end of the day.'},
+];
+
+// Overall profile lookup by total score
+const PROFILES=[
+  {min:100,max:125,label:'Excellent',      color:'#3ec9a7',
+   profile:'Balanced & Resilient Faculty',
+   interp:'Highly effective stress management, emotionally resilient, strong work-life balance.',
+   suggestions:['Continue current practices','Mentor colleagues on stress management','Take up leadership roles in well-being initiatives','Practice advanced techniques (mindfulness, reflection journaling)']},
+  {min:75, max:99, label:'Moderate',       color:'#d4a843',
+   profile:'Managing but Inconsistent',
+   interp:'Managing stress reasonably well, but improvement needed in some areas.',
+   suggestions:['Strengthen daily stress routines (breathing, breaks)','Improve work-life boundaries','Practice emotional regulation techniques','Schedule "me-time" intentionally']},
+  {min:50, max:74, label:'High Stress',    color:'#e87a30',
+   profile:'Struggling with Stress',
+   interp:'Experiencing significant stress; coping strategies are not consistently effective.',
+   suggestions:['Identify top 3 stress triggers immediately','Practice relaxation techniques daily (5–10 mins)','Improve time management (prioritization matrix)','Seek peer or professional support','Reduce over-commitment']},
+  {min:25, max:49, label:'Burnout Risk',   color:'#e8624a',
+   profile:'Emotionally Exhausted',
+   interp:'High level of stress and emotional exhaustion — immediate intervention required.',
+   suggestions:['Take immediate rest and recovery periods','Seek counselling or professional help','Reduce workload (if possible)','Start simple routines (sleep, breathing, walking)','Avoid isolation — talk to trusted colleagues']},
+];
+
+// Section-level recommendations
+const SEC_RECO={
+  A:{low:{label:'Low (5–14)',items:['Maintain a Stress Journal (track triggers daily)','Practice self-reflection for 5 minutes/day','Identify top 3 stress triggers','Use "Pause & Observe" technique']},
+     mod:{label:'Moderate (15–19)',items:['Improve consistency in reflection','Analyze patterns (time, people, workload)','Use weekly self-review']},
+     high:{label:'High (20–25)',items:['Help peers identify stress triggers','Move to proactive stress prevention']}},
+  B:{low:{label:'Low (5–14)',items:['Practice deep breathing (4-4-4 technique)','Use "Pause before response" habit','Label emotions ("I feel stressed/angry")','Avoid immediate reactions']},
+     mod:{label:'Moderate (15–19)',items:['Strengthen emotional awareness','Use mindfulness techniques']},
+     high:{label:'High (20–25)',items:['Take leadership in conflict management','Mentor others in emotional control']}},
+  C:{low:{label:'Low (5–14)',items:['Set fixed work boundaries','Schedule personal time (non-negotiable)','Avoid taking work home','Practice "digital detox" after work']},
+     mod:{label:'Moderate (15–19)',items:['Improve time allocation','Balance priority areas']},
+     high:{label:'High (20–25)',items:['Maintain routines','Encourage peers to adopt balance']}},
+  D:{low:{label:'Low (5–14)',items:['Introduce simple techniques: breathing exercises, walking, talking to peers','Practice 1 technique daily']},
+     mod:{label:'Moderate (15–19)',items:['Increase consistency','Try different strategies (yoga, mindfulness)']},
+     high:{label:'High (20–25)',items:['Refine techniques','Share best practices with colleagues']}},
+  E:{low:{label:'Low (5–14) — Immediate intervention needed',items:['Take rest breaks / short leave if possible','Seek emotional or professional support','Reduce workload temporarily']},
+     mod:{label:'Moderate (15–19)',items:['Prevent escalation','Improve recovery habits (sleep, relaxation)']},
+     high:{label:'High (20–25)',items:['Maintain energy levels','Focus on long-term well-being']}},
+};
+
+/* ══ STATE ══ */
+let user={},gender='',shuffledQs=[],currentIdx=0,answers={};
+let radarChart=null,barChart=null,cmpChart=null,previousResult=null;
+
+/* ══ UTILS ══ */
+function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');window.scrollTo(0,0)}
+function pct(s,m){return Math.round((s/m)*100)}
+function getProfile(total){return PROFILES.find(p=>total>=p.min&&total<=p.max)||PROFILES[PROFILES.length-1]}
+function getSecBand(score){return score>=20?'high':score>=15?'mod':'low'}
+
+/* ══ AUTH ══ */
+function togglePass(){const i=document.getElementById('auth-pass');i.type=i.type==='password'?'text':'password'}
+function doAuth(){
+  const u=document.getElementById('auth-user').value.trim();
+  const p=document.getElementById('auth-pass').value;
+  const err=document.getElementById('auth-err');
+  if(u==='user123'&&p==='12345678'){err.style.display='none';showScreen('screen-login')}
+  else{err.style.display='block'}
+}
+
+/* ══ USER DETAILS ══ */
+function pickGender(btn,val){document.querySelectorAll('.gender-btn').forEach(b=>b.classList.remove('sel'));btn.classList.add('sel');gender=val}
+function submitLogin(){
+  let ok=true;
+  const name=document.getElementById('inp-name').value.trim();
+  const age=parseInt(document.getElementById('inp-age').value);
+  const dob=document.getElementById('inp-dob').value;
+  const college=document.getElementById('inp-college').value.trim();
+  const dept=document.getElementById('inp-dept').value.trim();
+  const se=(id,show)=>{document.getElementById(id).style.display=show?'block':'none'};
+  se('err-name',!name);if(!name)ok=false;
+  se('err-age',isNaN(age)||age<18||age>80);if(isNaN(age)||age<18||age>80)ok=false;
+  se('err-dob',!dob);if(!dob)ok=false;
+  se('err-gender',!gender);if(!gender)ok=false;
+  se('err-college',!college);if(!college)ok=false;
+  se('err-dept',!dept);if(!dept)ok=false;
+  if(!ok)return;
+  user={name,age,dob,gender,college,dept};
+  const init=name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+  document.getElementById('rpt-av').textContent=init;
+  document.getElementById('rpt-name-hdr').textContent=name;
+  startQuiz();
+}
+
+/* ══ QUIZ ══ */
+function shuffle(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]]}return b}
+function startQuiz(){
+  // keep questions and option order fixed
+  shuffledQs=QUESTIONS.map(q=>({...q,opts:[...OPTIONS]}));
+  currentIdx=0;answers={};
+  showScreen('screen-quiz');
+  buildSlides();
+  goToSlide(0,'none');
+}
+
+function buildSlides(){
+  const vp=document.getElementById('slide-viewport');vp.innerHTML='';
+  const L=['A','B','C','D','E'];
+  shuffledQs.forEach((q,i)=>{
+    const sec=SECS.find(s=>s.id===q.sec);
+    const slide=document.createElement('div');slide.className='slide';slide.id='slide-'+i;
+    const optsHtml=q.opts.map((opt,oi)=>`
+      <button class="opt-btn" id="opt-${i}-${oi}" onclick="pickOpt(${i},${oi},${opt.s},event)">
+        <span class="mk">${L[oi]}</span><span>${opt.t}</span>
+      </button>`).join('');
+    slide.innerHTML=`
+      <div class="slide-card" style="border-top:3px solid ${sec.color}">
+        <div class="slide-illus">⌚</div>
+        <div class="q-text">${q.text}</div>
+        <div class="opts">${optsHtml}</div>
+      </div>`;
+    vp.appendChild(slide);
+  });
+}
+
+function goToSlide(idx,dir){
+  const total=shuffledQs.length;
+  const prev=document.querySelector('.slide.active');
+  if(prev&&dir!=='none'){prev.classList.remove('active');prev.classList.add('exit-left');setTimeout(()=>prev.classList.remove('exit-left'),420)}
+  else if(prev){prev.classList.remove('active')}
+  currentIdx=idx;
+  const slide=document.getElementById('slide-'+idx);
+  if(dir==='back'){slide.style.transform='translateX(-50px)';requestAnimationFrame(()=>{slide.style.transition='opacity .38s ease,transform .38s ease';slide.classList.add('active');slide.style.transform=''})}
+  else{slide.classList.add('active')}
+  // re-apply selection
+  const q=shuffledQs[idx];
+  if(answers[q.id]!==undefined){
+    q.opts.forEach((opt,oi)=>{
+      const btn=document.getElementById(`opt-${idx}-${oi}`);if(!btn)return;
+      const s=opt.s===answers[q.id];btn.classList.toggle('sel',s);
+      const mk=btn.querySelector('.mk');if(mk){mk.style.background=s?'var(--gold)':'';mk.style.borderColor=s?'var(--gold)':'';mk.style.color=s?'#07080d':''}
+    });
+  }
+  const p=Math.round(((idx+1)/total)*100);
+  document.getElementById('prog-fill').style.width=p+'%';
+  document.getElementById('prog-pct').textContent=p+'%';
+}
+
+function pickOpt(slideIdx,optIdx,score,ev){
+  const q=shuffledQs[slideIdx];
+  answers[q.id]=score;
+  if(ev){const btn=ev.currentTarget;const r=document.createElement('span');r.className='opt-ripple';const rect=btn.getBoundingClientRect();r.style.left=(ev.clientX-rect.left-10)+'px';r.style.top=(ev.clientY-rect.top-10)+'px';btn.appendChild(r);setTimeout(()=>r.remove(),600)}
+  shuffledQs[slideIdx].opts.forEach((_,oi)=>{
+    const b=document.getElementById(`opt-${slideIdx}-${oi}`);if(!b)return;
+    const s=oi===optIdx;b.classList.toggle('sel',s);
+    const mk=b.querySelector('.mk');if(mk){mk.style.background=s?'var(--gold)':'';mk.style.borderColor=s?'var(--gold)':'';mk.style.color=s?'#07080d':''}
+  });
+  if(slideIdx<shuffledQs.length-1){setTimeout(()=>{if(answers[q.id]!==undefined)goToSlide(slideIdx+1,'forward')},480)}
+  else{setTimeout(()=>buildReport(),500)}
+}
+
+/* ══ SCORE CALCULATION ══ */
+function calcScores(){
+  const raw={};
+  SECS.forEach(s=>{raw[s.id]=0});
+  QUESTIONS.forEach(q=>{
+    if(answers[q.id]===undefined)return;
+    const sec=SECS.find(s=>s.id===q.sec);
+    const score=sec.reverse?(6-answers[q.id]):answers[q.id];
+    raw[q.sec]+=score;
+  });
+  return raw;
+}
+
+/* ══ REPORT ══ */
+function buildReport(){
+  showScreen('screen-report');
+  switchTab(1,document.querySelectorAll('.rpt-tab')[0]);
+  try{const s=localStorage.getItem('mp_last');if(s)previousResult=JSON.parse(s);else previousResult=null}catch(e){previousResult=null}
+
+  const secScores=calcScores();
+  const total=Object.values(secScores).reduce((a,b)=>a+b,0);
+  const totalPct=pct(total,125);
+  const prof=getProfile(total);
+
+  try{localStorage.setItem('mp_last',JSON.stringify({secScores,total,totalPct,label:prof.label,date:new Date().toISOString()}))}catch(e){}
+
+  // User pill
+  const dobF=user.dob?new Date(user.dob).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}):'';
+  document.getElementById('user-pill').innerHTML=`
+    <div class="up-item"><div class="up-lbl">Name</div><div class="up-val">${user.name}</div></div>
+    <div class="up-item"><div class="up-lbl">Age</div><div class="up-val">${user.age}</div></div>
+    <div class="up-item"><div class="up-lbl">Gender</div><div class="up-val">${user.gender}</div></div>
+    <div class="up-item"><div class="up-lbl">DOB</div><div class="up-val">${dobF}</div></div>
+    <div class="up-item"><div class="up-lbl">Institution</div><div class="up-val">${user.college}</div></div>
+    <div class="up-item"><div class="up-lbl">Department</div><div class="up-val">${user.dept}</div></div>`;
+
+  // Ring
+  setTimeout(()=>{
+    const circ=2*Math.PI*60;
+    const arc=document.getElementById('ring-arc');
+    arc.style.strokeDasharray=circ;arc.style.strokeDashoffset=circ-(circ*totalPct/100);arc.style.stroke=prof.color;
+    document.getElementById('ring-pct-text').textContent=totalPct+'%';
+    document.getElementById('ring-score-text').textContent='Overall';
+    document.getElementById('score-level-text').textContent=prof.label;
+    document.getElementById('score-level-text').style.color=prof.color;
+    document.getElementById('score-profile-text').textContent=prof.profile;
+    document.getElementById('score-interp-text').textContent=prof.interp;
+  },150);
+
+  // Suggestions
+  const sugHtml=prof.suggestions.map(s=>`<div class="sug-item"><div class="sug-dot"></div><span>${s}</span></div>`).join('');
+  document.getElementById('suggestions-card').innerHTML=sugHtml;
+
+  // Charts
+  setTimeout(()=>{
+    if(radarChart)radarChart.destroy();
+    radarChart=new Chart(document.getElementById('chart-radar').getContext('2d'),{
+      type:'radar',
+      data:{labels:SECS.map(s=>'Sec '+s.id+': '+s.name.split(' ')[0]),datasets:[{data:SECS.map(s=>pct(secScores[s.id],25)),backgroundColor:'rgba(74,143,232,.1)',borderColor:'#4a8fe8',borderWidth:2,pointBackgroundColor:'#4a8fe8',pointRadius:4}]},
+      options:{responsive:true,maintainAspectRatio:false,scales:{r:{min:0,max:100,ticks:{stepSize:25,color:'#4a4845',font:{size:9},backdropColor:'transparent'},grid:{color:'rgba(255,255,255,0.05)'},angleLines:{color:'rgba(255,255,255,0.05)'},pointLabels:{color:'#8a8680',font:{size:10}}}},plugins:{legend:{display:false}}}
+    });
+    if(barChart)barChart.destroy();
+    barChart=new Chart(document.getElementById('chart-bar').getContext('2d'),{
+      type:'bar',
+      data:{labels:SECS.map(s=>s.id+': '+s.name),datasets:[{data:SECS.map(s=>secScores[s.id]),backgroundColor:SECS.map(s=>s.bg),borderColor:SECS.map(s=>s.color),borderWidth:1.5,borderRadius:8}]},
+      options:{responsive:true,maintainAspectRatio:false,scales:{y:{min:0,max:25,ticks:{stepSize:5,color:'#4a4845',font:{size:11}},grid:{color:'rgba(255,255,255,0.04)'}},x:{ticks:{color:'#4a4845',font:{size:10}},grid:{display:false}}},plugins:{legend:{display:false}}}
+    });
+  },260);
+
+  // Section cards
+  const sc=document.getElementById('section-cards');sc.innerHTML='';
+  SECS.forEach(sec=>{
+    const score=secScores[sec.id];const p=pct(score,25);
+    const band=getSecBand(score);const reco=SEC_RECO[sec.id][band];
+    const badgeTxt=band==='high'?'High':band==='mod'?'Moderate':'Low';
+    const badgeCol=band==='high'?'#3ec9a7':band==='mod'?'#d4a843':'#e8624a';
+    const card=document.createElement('div');card.className='sec-card';
+    card.innerHTML=`
+      <div class="sec-card-header">
+        <div class="sec-card-name" style="color:${sec.color}">${sec.icon} Section ${sec.id}: ${sec.name}</div>
+        <div class="sec-card-badge" style="background:${badgeCol}22;color:${badgeCol}">${badgeTxt} — ${p}%</div>
+      </div>
+      <div class="sec-card-body">
+        <div class="sec-card-layout">
+          <div class="sec-card-media">
+            <img src="${sec.img}" alt="${sec.name}">
+          </div>
+          <div class="sec-card-content">
+            <div class="sec-bar-row">
+              <div class="sec-bar-bg"><div class="sec-bar-fill" style="width:${p}%;background:${sec.color}"></div></div>
+              <div class="sec-bar-pct" style="color:${sec.color}">${p}%</div>
+            </div>
+            <div class="sec-reco">
+              <div class="reco-band">🔹 ${reco.label}:</div>
+              <ul>${reco.items.map(i=>`<li>${i}</li>`).join('')}</ul>
+            </div>
+          </div>
+        </div>
+      </div>`;
+    sc.appendChild(card);
+  });
+
+  window._reportData={secScores,total,totalPct,prof};
+}
+
+function buildComparison(currScores,currPct,currTotal,currProf){
+  const el=document.getElementById('comparison-content');
+  if(!previousResult){
+    el.innerHTML=`<div class="no-prev"><strong>No previous attempt found</strong>Complete the assessment again after retaking and your full progress comparison will appear here.</div>`;
+    return;
+  }
+  const prev=previousResult;
+  const delta=currPct-prev.totalPct;
+  const dir=delta>0?'up':delta<0?'down':'same';
+  const sym=delta>0?'↑':delta<0?'↓':'→';
+  const prevDate=prev.date?new Date(prev.date).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}):'Previous';
+  const currDate=new Date().toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'});
+  const secRows=SECS.map(sec=>{
+    const cp=currScores[sec.id];const pp=prev.secScores&&prev.secScores[sec.id]!==undefined?prev.secScores[sec.id]:null;
+    const cpPct=pct(cp,25);const ppPct=pp!==null?pct(pp,25):null;
+    const dd=ppPct!==null?cpPct-ppPct:null;const ddir=dd===null?'same':dd>0?'up':dd<0?'down':'same';
+    return`<div class="cmp-sec-row">
+      <div class="cmp-sec-header">
+        <div class="cmp-sec-name" style="color:${sec.color}">${sec.icon} Section ${sec.id}: ${sec.name}</div>
+        ${dd!==null?`<span class="cmp-delta ${ddir}" style="font-size:11px">${dd>0?'+':''}${dd}%</span>`:''}
+      </div>
+      <div style="display:flex;flex-direction:column;gap:7px">
+        ${pp!==null?`<div class="cmp-bar-row"><div class="cmp-bar-lbl">PREV</div><div class="cmp-bar-bg"><div class="cmp-bar-fill" style="width:${ppPct}%;background:${sec.color}44"></div></div><div class="cmp-bar-pct" style="color:var(--text3)">${ppPct}%</div></div>`:''}
+        <div class="cmp-bar-row"><div class="cmp-bar-lbl">NOW</div><div class="cmp-bar-bg"><div class="cmp-bar-fill" style="width:${cpPct}%;background:${sec.color}"></div></div><div class="cmp-bar-pct" style="color:${sec.color}">${cpPct}%</div></div>
+      </div>
+    </div>`;
+  }).join('');
+  el.innerHTML=`
+    <div class="cmp-hero">
+      <div><div class="cmp-lbl">Previous attempt</div><div class="cmp-pct" style="color:var(--text2)">${prev.totalPct}%</div><div class="cmp-score">${prev.label}</div><div class="cmp-date">${prevDate}</div></div>
+      <div class="cmp-mid"><div class="cmp-arrow ${dir}">${sym}</div><div class="cmp-delta ${dir}">${delta>0?'+':''}${delta}%</div></div>
+      <div style="text-align:right"><div class="cmp-lbl">Current attempt</div><div class="cmp-pct" style="color:${currProf.color}">${currPct}%</div><div class="cmp-score">${currProf.label}</div><div class="cmp-date">${currDate}</div></div>
+    </div>
+    <div class="sec-title" style="font-size:15px;margin-bottom:1rem">Section by section</div>
+    ${secRows}`;
+  setTimeout(()=>{
+    if(cmpChart)cmpChart.destroy();
+    const ctx=document.getElementById('chart-cmp');if(!ctx)return;
+    cmpChart=new Chart(ctx.getContext('2d'),{type:'bar',data:{labels:SECS.map(s=>'Sec '+s.id),datasets:[{label:'Previous',data:SECS.map(s=>prev.secScores&&prev.secScores[s.id]!==undefined?prev.secScores[s.id]:0),backgroundColor:'#8a868022',borderColor:'#8a868066',borderWidth:1.5,borderRadius:4},{label:'Current',data:SECS.map(s=>currScores[s.id]),backgroundColor:SECS.map(s=>s.bg),borderColor:SECS.map(s=>s.color),borderWidth:1.5,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,scales:{y:{min:0,max:25,grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#4a4845',font:{size:11}}},x:{grid:{display:false},ticks:{color:'#4a4845'}}},plugins:{legend:{display:false}}}});
+  },200);
+}
+
+function switchTab(n,btn){
+  document.querySelectorAll('.rpt-tab').forEach(t=>t.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+  document.querySelectorAll('.report-page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('rpt-p'+n).classList.add('active');
+  window.scrollTo(0,0);
+}
+
+/* ══ 2-PAGE PDF DOWNLOAD ══ */
+async function downloadReport(){
+  const d=window._reportData;if(!d){alert('Report data unavailable. Please complete the assessment first.');return}
+  const pdfModule = window.jspdf || window.jsPDF || (window.jspdf && window.jspdf.default) || (window.jsPDF && window.jsPDF.default);
+  const jsPDF = typeof pdfModule==='function'?pdfModule:(pdfModule&&((pdfModule.jsPDF||pdfModule.default)||pdfModule));
+  if(!jsPDF){console.error('jsPDF module missing',window.jspdf,window.jsPDF);alert('PDF library failed to load. Please refresh the page.');return}
+  try {
+    const doc=new jsPDF({unit:'mm',format:'a4'});
+    const W=210,H=297;
+  const date=new Date().toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'});
+  const dob=user.dob?new Date(user.dob).toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'}):'-';
+
+  // ── helpers ──
+  const h2r=h=>{const r=parseInt(h.slice(1,3),16),g=parseInt(h.slice(3,5),16),b=parseInt(h.slice(5,7),16);return[r,g,b]};
+  const pdfText=v=>String(v??'').normalize('NFKD').replace(/[^\x20-\x7E]/g,'').replace(/\s+/g,' ').trim();
+  const sf=(style,size,color)=>{doc.setFont('helvetica',style);doc.setFontSize(size);doc.setTextColor(...(color||[43,51,64]))};
+  const tx=(str,x,y,opt)=>doc.text(Array.isArray(str)?str.map(pdfText):pdfText(str),x,y,opt||{});
+  const ln=(x1,y1,x2,y2,col,lw)=>{doc.setDrawColor(...(col||[40,44,58]));doc.setLineWidth(lw||0.3);doc.line(x1,y1,x2,y2)};
+  const fillRect=(x,y,w,h,col)=>{doc.setFillColor(...col);doc.rect(x,y,w,h,'F')};
+  const rndRect=(x,y,w,h,col,scol)=>{if(col)doc.setFillColor(...col);if(scol)doc.setDrawColor(...scol);else doc.setDrawColor(...(col||[15,17,24]));doc.roundedRect(x,y,w,h,2,2,col&&scol?'FD':col?'F':'S')};
+  const bar=(x,y,val,max,w,col)=>{doc.setFillColor(232,237,244);doc.roundedRect(x,y,w,2.8,1.4,1.4,'F');if(val>0){doc.setFillColor(...h2r(col));doc.roundedRect(x,y,(w*val/max),2.8,1.4,1.4,'F')}};
+  const pill=(txt,x,y,col)=>{const rgb=h2r(col);const safeTxt=pdfText(txt);const tw=doc.getTextWidth(safeTxt)+8;const bg=[Math.round(rgb[0]*0.15+255*0.85),Math.round(rgb[1]*0.15+255*0.85),Math.round(rgb[2]*0.15+255*0.85)];doc.setFillColor(...bg);doc.roundedRect(x,y-3.5,tw,5.5,2.5,2.5,'F');doc.setDrawColor(...rgb);doc.setLineWidth(0.25);doc.roundedRect(x,y-3.5,tw,5.5,2.5,2.5,'S');doc.setTextColor(...rgb);doc.setFontSize(7);doc.setFont('helvetica','bold');tx(safeTxt,x+4,y,{baseline:'middle'})};
+  const loadPdfImg=src=>new Promise(resolve=>{const img=new Image();img.onload=()=>resolve(img);img.onerror=()=>resolve(null);img.src=src});
+
+  /* ════ PAGE 1 ════ */
+  // University banner (above MindPulse heading)
+  const uniBannerSrc='assets/pdf-top-banner.png';
+  const uniBanner=await loadPdfImg(uniBannerSrc);
+  const headerY=uniBanner?31:0;
+
+  // Header band
+  fillRect(0,0,W,H,[246,248,252]);
+  if(uniBanner){
+    const ar=(uniBanner.width&&uniBanner.height)?(uniBanner.width/uniBanner.height):4.5;
+    let bw=W-24,bh=bw/ar;
+    if(bh>24){bh=24;bw=bh*ar}
+    doc.addImage(uniBanner,'PNG',(W-bw)/2,4,bw,bh,undefined,'FAST');
+  }
+  fillRect(0,headerY,W,14,[31,41,55]);
+  fillRect(0,headerY+14,W,0.8,[212,168,67]);
+  sf('bold',18,[212,168,67]);tx('Mind',12,headerY+9.5);
+  sf('bold',18,[244,246,250]);tx('Pulse',12+doc.getTextWidth('Mind'),headerY+9.5);
+  sf('normal',8,[185,192,203]);tx('Faculty Stress Assessment Report',12,headerY+13.5);
+  sf('normal',8,[185,192,203]);tx('Date: '+date,W-12,headerY+13.5,{align:'right'});
+
+  // Avatar circle
+  const init=user.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+  doc.setFillColor(43,39,32);doc.setDrawColor(212,168,67);doc.setLineWidth(0.5);doc.circle(W-20,headerY+8,5,'FD');
+  sf('bold',7,[212,168,67]);tx(init,W-20,headerY+8.5,{align:'center'});
+
+  let y=headerY+20;
+
+  // ── User Details block ──
+  rndRect(12,y,W-24,30,[255,255,255],[217,224,234]);
+  sf('bold',7.5,[108,120,138]);tx('PARTICIPANT DETAILS',16,y+5.5);
+  ln(12,y+8,W-12,y+8,[226,232,240],0.3);
+  const fields=[['Name',user.name],['Age',String(user.age)],['Gender',user.gender],['DOB',dob],['Institution',user.college],['Department',user.dept]];
+  fields.forEach((f,i)=>{
+    const col=i%3;const row=Math.floor(i/3);
+    const fx=[16,78,140][col];const fy=y+13+row*10;
+    sf('bold',7,[108,120,138]);tx(f[0],fx,fy);
+    sf('normal',8.5,[43,51,64]);tx(f[1],fx,fy+4.5);
+  });
+  y+=36;
+
+  // ── Overall Score block ──
+  rndRect(12,y,W-24,36,[255,255,255],[217,224,234]);
+  sf('bold',7.5,[108,120,138]);tx('OVERALL RESULT',16,y+5.5);
+  ln(12,y+8,W-12,y+8,[226,232,240],0.3);
+
+  // mini ring
+  const cx=28,cy=y+22,r=10;
+  const prgColor=d.prof.color;const rgb=h2r(prgColor);
+  doc.setDrawColor(226,232,240);doc.setLineWidth(2.5);doc.circle(cx,cy,r,'S');
+  doc.setDrawColor(...rgb);doc.setLineWidth(2.5);
+  const steps=Math.max(1,Math.round(d.totalPct/100*360/3));
+  for(let i=0;i<steps;i++){const a1=(-90+i*3)*Math.PI/180;const a2=(-90+(i+1)*3)*Math.PI/180;doc.line(cx+r*Math.cos(a1),cy+r*Math.sin(a1),cx+r*Math.cos(a2),cy+r*Math.sin(a2))}
+  sf('bold',10,rgb);tx(d.totalPct+'%',cx,cy+1,{align:'center'});
+  sf('normal',6.5,[120,131,148]);tx('Overall',cx,cy+5.5,{align:'center'});
+
+  pill(d.prof.label,43,y+16,prgColor);
+  sf('bold',9,rgb);tx(d.prof.profile,43,y+23);
+  sf('normal',8,[170,166,160]);
+  const interpLines=doc.splitTextToSize(pdfText(d.prof.interp),W-62);
+  interpLines.slice(0,2).forEach((l,i)=>{tx(l,43,y+29+i*5)});
+  y+=42;
+
+  // ── Suggestions ──
+  const sugRows=d.prof.suggestions;
+  const sugHeight=8+sugRows.length*6+4;
+  rndRect(12,y,W-24,sugHeight,[255,255,255],[217,224,234]);
+  sf('bold',7.5,[212,168,67]);tx('SUGGESTIONS',16,y+5.5);
+  ln(12,y+8,W-12,y+8,[226,232,240],0.3);
+  sugRows.forEach((s,i)=>{
+    doc.setFillColor(...rgb);doc.circle(18,y+13+i*6,1,'F');
+    sf('normal',8,[82,93,110]);tx(s,22,y+13.5+i*6);
+  });
+  y+=sugHeight+6;
+
+  // ── Section overview bar chart (manual bars) ──
+  rndRect(12,y,W-24,42,[255,255,255],[217,224,234]);
+  sf('bold',7.5,[108,120,138]);tx('SECTION SCORES',16,y+5.5);
+  ln(12,y+8,W-12,y+8,[226,232,240],0.3);
+  const barsX=16,barsW=(W-40)/5;
+  SECS.forEach((sec,i)=>{
+    const score=d.secScores[sec.id];
+    const bx=barsX+i*(barsW+2.5);
+    bar(bx,y+12,score,25,barsW-2,sec.color);
+    sf('bold',7.5,h2r(sec.color));tx(pct(score,25)+'%',bx+(barsW-2)/2,y+17,{align:'center'});
+    sf('normal',6.5,[108,120,138]);tx('Sec '+sec.id,bx+(barsW-2)/2,y+22,{align:'center'});
+    sf('normal',6,[108,120,138]);
+    const nm=sec.name.split(' ')[0];tx(nm,bx+(barsW-2)/2,y+26.5,{align:'center'});
+  });
+  // legend
+  sf('normal',6.5,[108,120,138]);tx('Max per section: 25',W-14,y+38,{align:'right'});
+  y+=48;
+
+  // footer p1
+  fillRect(0,H-8,W,8,[240,243,248]);
+  sf('normal',6.5,[124,135,151]);tx('MindPulse Psychometric Assessment - Confidential - Page 1 of 2',W/2,H-3,{align:'center'});
+
+  /* ════ PAGE 2 ════ */
+  doc.addPage();
+  fillRect(0,0,W,H,[246,248,252]);
+  fillRect(0,0,W,14,[31,41,55]);
+  fillRect(0,14,W,0.8,[212,168,67]);
+  sf('bold',12,[212,168,67]);tx('MindPulse',12,9.5);
+  sf('normal',8,[185,192,203]);tx('Section-wise Breakdown and Recommendations',12,13.5);
+  sf('normal',8,[185,192,203]);tx(user.name+' - '+date,W-12,13.5,{align:'right'});
+
+  y=20;
+
+  for(let si=0;si<SECS.length;si++){
+    const sec=SECS[si];
+    const score=d.secScores[sec.id];
+    const p=pct(score,25);
+    const band=getSecBand(score);
+    const reco=SEC_RECO[sec.id][band];
+    const badgeTxt=band==='high'?'High':band==='mod'?'Moderate':'Low';
+    const badgeCol=band==='high'?'#3ec9a7':band==='mod'?'#d4a843':'#e8624a';
+    const mediaW=(W-24)*0.30;
+    const detailsW=(W-24)-mediaW;
+    const mediaX=12;
+    const detailsX=12+mediaW;
+    const textMaxW=detailsW-14;
+    const recoLines=reco.items.map(item=>doc.splitTextToSize(pdfText(item),textMaxW));
+    const lineH=4.1;
+    const detailsContentH=10+7+recoLines.reduce((sum,lines)=>sum+(lines.length*lineH)+1.4,0)+6;
+    const cardH=Math.max(detailsContentH,42);
+    if(y+cardH>H-14)y=H-14; // won't happen for 5 sections but safety
+
+    rndRect(12,y,W-24,cardH,[255,255,255],[217,224,234]);
+    // section image panel (30%)
+    const secImg=await loadPdfImg(sec.img);
+    if(secImg){
+      try{
+        doc.addImage(secImg,'PNG',mediaX+1.2,y+1.2,mediaW-2.4,cardH-2.4,undefined,'FAST');
+      }catch(e){}
+    }else{
+      fillRect(mediaX+1.2,y+1.2,mediaW-2.4,cardH-2.4,[235,239,245]);
+      sf('bold',8,[140,149,162]);tx('Image',mediaX+(mediaW/2),y+(cardH/2),{align:'center'});
+    }
+    // color strip on details panel
+    fillRect(detailsX,y,2.5,cardH,h2r(sec.color));
+    // header row
+    sf('bold',8.5,h2r(sec.color));tx('Section '+sec.id+': '+sec.name,detailsX+5,y+5.5);
+    // score pill
+    pill(badgeTxt+' - '+p+'%',detailsX+detailsW-37,y+5,badgeCol);
+    // bar
+    bar(detailsX+5,y+10,score,25,detailsW-10,sec.color);
+    sf('bold',8,h2r(sec.color));tx(p+'%',detailsX+detailsW-3,y+12.5,{align:'right'});
+    // reco header
+    sf('bold',7,[212,168,67]);tx('- '+reco.label+':',detailsX+5,y+18);
+    let recoY=y+23;
+    recoLines.forEach(lines=>{
+      doc.setFillColor(...h2r(sec.color));doc.circle(detailsX+7.5,recoY,0.8,'F');
+      sf('normal',7.5,[82,93,110]);tx(lines,detailsX+10,recoY+0.6);
+      recoY+=(lines.length*lineH)+1.4;
+    });
+    y+=cardH+4;
+  }
+
+  // footer p2
+  fillRect(0,H-8,W,8,[240,243,248]);
+  sf('normal',6.5,[124,135,151]);tx('MindPulse Psychometric Assessment - Confidential - Page 2 of 2',W/2,H-3,{align:'center'});
+
+  const filename='mindpulse-report-'+user.name.replace(/\s+/g,'-').toLowerCase()+'.pdf';
+  try {
+    doc.save(filename);
+  } catch(saveErr) {
+    try {
+      const blob = doc.output('blob');
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch(blobErr) {
+      console.error('PDF download failed', saveErr, blobErr);
+      alert('PDF download failed. Please open the browser console for details.');
+    }
+  }
+  } catch(err) {
+    console.error('PDF generation failed', err);
+    alert('PDF generation failed. Please open the browser console for details.');
+  }
+}
+</script>
+</body>
+</html>
